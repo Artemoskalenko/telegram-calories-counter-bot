@@ -3,6 +3,7 @@ import os
 
 from aiogram import Bot, Dispatcher, executor, types
 
+import db
 from dishes import Dishes
 import exceptions
 import meals
@@ -30,8 +31,18 @@ async def send_welcome(message: types.Message):
         "Категории блюд: /dishes")
 
 
+@dp.message_handler(lambda message: message.text.startswith('/weight'))
+async def set_weight(message: types.Message):
+    """Устанавливает новый вес пользователя"""
+    user_weight = int(message.text[7:])
+    db.update_weight(user_weight)
+    answer_message = f"Установлен новый вес пользователя: {user_weight}\n\nСуточные нормы:\nкалории - {user_weight*33}\n" \
+                     f"белки - {user_weight*2}\nжири - {user_weight}\nуглеводы - {user_weight*4}"
+    await message.answer(answer_message)
+
+
 @dp.message_handler(lambda message: message.text.startswith('/del'))
-async def del_expense(message: types.Message):
+async def del_meal(message: types.Message):
     """Удаляет одну запись о приёме пищи по её идентификатору"""
     row_id = int(message.text[4:])
     meals.delete_meal(row_id)

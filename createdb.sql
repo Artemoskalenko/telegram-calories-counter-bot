@@ -1,4 +1,5 @@
 create table info(
+    id integer primary key,
     purpose varchar(255),
     user_weight integer,
     calories_limit integer,

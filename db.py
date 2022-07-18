@@ -20,6 +20,18 @@ def insert(table: str, column_values: Dict):
     conn.commit()
 
 
+def update_weight(user_weight: int):
+    """Устанавливает новый вес пользователя"""
+    calories_limit = user_weight * 33
+    proteins_limit = user_weight * 2
+    fats_limit = user_weight * 1
+    carbohydrates_limit = user_weight * 4
+    cursor.execute(f"UPDATE info SET user_weight = {user_weight},calories_limit = {calories_limit}, "
+                   f"proteins_limit = {proteins_limit}, fats_limit = {fats_limit}, "
+                   f"carbohydrates_limit = {carbohydrates_limit} WHERE id = '1'")
+    conn.commit()
+
+
 def fetchall(table: str, columns: List[str]) -> List[Tuple]:
     columns_joined = ", ".join(columns)
     cursor.execute(f"SELECT {columns_joined} FROM {table}")
