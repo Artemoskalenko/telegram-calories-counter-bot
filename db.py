@@ -45,6 +45,12 @@ def fetchall(table: str, columns: List[str]) -> List[Tuple]:
     return result
 
 
+def get_weight():
+    cursor.execute("select user_weight from info where id = '1'")
+    result = cursor.fetchone()[0]
+    return result
+
+
 def delete(table: str, row_id: int) -> None:
     row_id = int(row_id)
     cursor.execute(f"delete from {table} where id={row_id}")

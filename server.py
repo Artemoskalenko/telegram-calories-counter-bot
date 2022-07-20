@@ -8,6 +8,8 @@ from dishes import Dishes
 import exceptions
 import meals
 from middlewares import AccessMiddleware
+from keyboards import keyboard
+from aiogram.types import ReplyKeyboardRemove
 
 
 logging.basicConfig(level=logging.INFO)
@@ -24,11 +26,12 @@ dp.middleware.setup(AccessMiddleware(ACCESS_ID))
 async def send_welcome(message: types.Message):
     """Отправляет приветственное сообщение и помощь по боту"""
     await message.answer(
-        "Бот для учёта калорий\n\n"
-        "Добавить приём пищи: 100 филе куриное\n"
-        "Сегодняшняя статистика: /meals\n"
-        "Сколько осталось съесть сегодня: /rest\n"
-        "Категории блюд: /dishes")
+        f"Бот для учёта калорий\n\n"
+        f"Добавить приём пищи: 100 филе куриное\n"
+        f"Сегодняшняя статистика: /meals\n"
+        f"Сколько осталось съесть сегодня: /rest\n"
+        f"Категории блюд: /dishes\n"
+        f"Установить новый вес пользователя: /weight75", reply_markup=keyboard)
 
 
 @dp.message_handler(lambda message: message.text.startswith('/weight'))
@@ -37,7 +40,9 @@ async def set_weight(message: types.Message):
     user_weight = int(message.text[7:])
     db.update_weight(user_weight)
     answer_message = f"Установлен новый вес пользователя: {user_weight}\n\nСуточные нормы:\nкалории - {user_weight*33}\n" \
-                     f"белки - {user_weight*2}\nжири - {user_weight}\nуглеводы - {user_weight*4}"
+                     f"белки - {user_weight*2}\nжири - {user_weight}\nуглеводы - {user_weight*4}\n\n" \
+                     f"Установить новый вес пользователя: /weight{db.get_weight()-1}\n" \
+                     f"Установить новый вес пользователя: /weight{db.get_weight()+1}\n"
     await message.answer(answer_message)
 
 
