@@ -9,7 +9,8 @@ b4 = KeyboardButton('/meals')
 b5 = KeyboardButton(f'/weight{(db.get_weight()//10)*10}')
 b6 = KeyboardButton(f'/weight{(db.get_weight()//10)*10+5}')
 b7 = KeyboardButton(f'/weight{(db.get_weight()//10)*10+10}')
+b8 = KeyboardButton('/newdish')
 
 keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
 
-keyboard.row(b1).row(b2, b3, b4).row(b5, b6, b7)
+keyboard.row(b1).row(b4, b2).row(b5, b6, b7).row(b3, b8)

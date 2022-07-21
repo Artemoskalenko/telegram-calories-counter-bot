@@ -1,5 +1,6 @@
 """Работа с категориями блюд"""
 from typing import Dict, List, NamedTuple
+from aiogram.dispatcher.filters.state import State, StatesGroup
 
 import db
 import exceptions
@@ -14,6 +15,17 @@ class Dish(NamedTuple):
     fats: float
     carbohydrates: float
     aliases: List[str]
+
+
+class FSMDish(StatesGroup):
+    """Состояния машины состояний"""
+    codename = State()
+    name = State()
+    calories = State()
+    proteins = State()
+    fats = State()
+    carbohydrates = State()
+    aliases = State()
 
 
 class Dishes:

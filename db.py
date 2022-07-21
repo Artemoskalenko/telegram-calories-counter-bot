@@ -57,6 +57,12 @@ def delete(table: str, row_id: int) -> None:
     conn.commit()
 
 
+async def add_dish(state):
+    async with state.proxy() as data:
+        cursor.execute('INSERT INTO dish VALUES (?, ?, ?, ?, ?, ?, ?)', tuple(data.values()))
+        conn.commit()
+
+
 def get_cursor():
     return cursor
 

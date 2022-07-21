@@ -2,14 +2,16 @@ import logging
 import os
 
 from aiogram import Bot, Dispatcher, executor, types
+from aiogram.dispatcher import FSMContext
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher.filters import Text
 
 import db
-from dishes import Dishes
+from dishes import Dishes, FSMDish
 import exceptions
 import meals
 from middlewares import AccessMiddleware
 from keyboards import keyboard
-from aiogram.types import ReplyKeyboardRemove
 
 
 logging.basicConfig(level=logging.INFO)
@@ -17,8 +19,10 @@ logging.basicConfig(level=logging.INFO)
 API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
 ACCESS_ID = os.getenv("TELEGRAM_ACCESS_ID")
 
+storage = MemoryStorage()
+
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher(bot, storage=storage)
 dp.middleware.setup(AccessMiddleware(ACCESS_ID))
 
 
@@ -31,7 +35,8 @@ async def send_welcome(message: types.Message):
         f"Сегодняшняя статистика: /meals\n"
         f"Сколько осталось съесть сегодня: /rest\n"
         f"Категории блюд: /dishes\n"
-        f"Установить новый вес пользователя: /weight75", reply_markup=keyboard)
+        f"Установить новый вес пользователя: /weight75\n"
+        f"Добавить новое блюдо: /newdish", reply_markup=keyboard)
 
 
 @dp.message_handler(lambda message: message.text.startswith('/weight'))
@@ -86,6 +91,82 @@ async def today_meals(message: types.Message):
         for meal in meals_list]
     answer_message = "Последние приёмы пищи:\n\n* " + "\n\n* ".join(meals_list_rows)
     await message.answer(answer_message)
+
+
+@dp.message_handler(commands='newdish', state=None)
+async def new_dish(message: types.Message):
+    """Включение машины состояний для добавления нового блюда"""
+    await FSMDish.codename.set()
+    await message.reply("Введите кодовое название блюда (на английском)")
+
+
+@dp.message_handler(state="*", commands='отмена')
+@dp.message_handler(Text(equals='отмена', ignore_case=True), state="*")
+async def cancel_handler(message: types.Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state is None:
+        return
+    await state.finish()
+    await message.reply('ОК')
+
+
+@dp.message_handler(state=FSMDish.codename)
+async def load_codename(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['codename'] = message.text
+    await FSMDish.next()
+    await message.reply("Введите название блюда")
+
+
+@dp.message_handler(state=FSMDish.name)
+async def load_name(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['name'] = message.text
+    await FSMDish.next()
+    await message.reply("Введите количество калорий на 100гр. блюда")
+
+
+@dp.message_handler(state=FSMDish.calories)
+async def load_calories(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['calories'] = float(message.text)
+    await FSMDish.next()
+    await message.reply("Введите количество белков на 100гр. блюда")
+
+
+@dp.message_handler(state=FSMDish.proteins)
+async def load_proteins(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['proteins'] = float(message.text)
+    await FSMDish.next()
+    await message.reply("Введите количество жиров на 100гр. блюда")
+
+
+@dp.message_handler(state=FSMDish.fats)
+async def load_fats(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['fats'] = float(message.text)
+    await FSMDish.next()
+    await message.reply("Введите количество углеводов на 100гр. блюда")
+
+
+@dp.message_handler(state=FSMDish.carbohydrates)
+async def load_carbohydrates(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['carbohydrates'] = float(message.text)
+    await FSMDish.next()
+    await message.reply("Введите дополнительные названия блюда через запятую")
+
+
+@dp.message_handler(state=FSMDish.aliases)
+async def load_aliases(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['aliases'] = message.text
+
+    await db.add_dish(state)
+    await message.answer(f'Новое блюдо было добавлено в меню\n\n'
+                         f'Посмотреть список блюд: /dishes')
+    await state.finish()
 
 
 @dp.message_handler()
